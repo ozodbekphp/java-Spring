@@ -104,7 +104,7 @@ public class ProductService implements ProductInterface {
 
         productRepository.delete(product);
 
-        return ProductResponse.builder()
+            return ProductResponse.builder()
             .id(product.getId())
             .name(product.getName())
             .price(product.getPrice())
