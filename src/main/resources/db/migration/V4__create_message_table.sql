@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS messages(
+    id BIGSERIAL PRIMARY KEY,
+    message VARCHAR(60),
+    product_id BIGINT REFERENCES products(id) ON DELETE CASCADE
+);
