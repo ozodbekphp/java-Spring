@@ -33,6 +33,9 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Column(name = "token")
+    private String token;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 }

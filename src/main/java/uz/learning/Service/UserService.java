@@ -12,6 +12,7 @@ import uz.learning.Repository.UserRepository;
 import uz.learning.dto.request.UserRequest;
 import uz.learning.dto.response.AuthResponse;
 import uz.learning.dto.response.UserResponse;
+import uz.learning.filter.AuthContext;
 
 @Service
 @RequiredArgsConstructor
@@ -55,6 +56,12 @@ public class UserService implements UserInterface {
         }
 
         String token = UUID.randomUUID().toString();
+
+        // Tokenni bazaga (users jadvaliga) va xotiraga saqlaymiz
+        user.setToken(token);
+        userRepository.save(user);
+        AuthContext.saveToken(token, user.getId());
+
         return AuthResponse.builder()
                 .token(token)
                 .build();

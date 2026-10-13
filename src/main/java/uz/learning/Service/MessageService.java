@@ -11,6 +11,7 @@ import uz.learning.Repository.MessageRepository;
 import uz.learning.Repository.ProductRepository;
 import uz.learning.dto.request.MessageRequest;
 import uz.learning.dto.response.MessageResponse;
+import uz.learning.filter.AuthContext;
 
 @Service
 @RequiredArgsConstructor
@@ -24,9 +25,15 @@ public class MessageService implements MessageInterface {
             throw new RuntimeException("Mahsulot id topilmadi: " + request.getProductId());
         }
 
+        // Login qilgan userning ID sini olamiz
+        Long currentUserId = AuthContext.getCurrentUserId();
+
         Message message = Message.builder()
                 .message(request.getMessage())
                 .productId(request.getProductId())
+                .userId(currentUserId)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
 
         Message createMessage = messageRepository.save(message);
@@ -34,8 +41,8 @@ public class MessageService implements MessageInterface {
         return MessageResponse.builder()
                 .id(createMessage.getId())
                 .message("Muvaffaqiyatli yaratildi")
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(createMessage.getCreatedAt())
+                .updatedAt(createMessage.getUpdatedAt())
                 .build();
     }
 
@@ -60,6 +67,12 @@ public class MessageService implements MessageInterface {
         Message message = messageRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Bunday message topilmadi id: " + id));
 
+        // Login qilgan user faqat o'zi yozgan xabarni yangilay oladi
+        Long currentUserId = AuthContext.getCurrentUserId();
+        if (message.getUserId() == null || !message.getUserId().equals(currentUserId)) {
+            throw new RuntimeException("Bu xabar sizga tegishli emas! Faqat o'zingiz yozgan xabarni yangilay olasiz.");
+        }
+
         message.setMessage(request.getMessage());
         message.setUpdatedAt(LocalDateTime.now());
 
@@ -75,6 +88,12 @@ public class MessageService implements MessageInterface {
     public MessageResponse delete(Long id) {
         Message message = messageRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Xabar topilmadi."));
+
+        // Login qilgan user faqat o'zi yozgan xabarni o'chira oladi
+        Long currentUserId = AuthContext.getCurrentUserId();
+        if (message.getUserId() == null || !message.getUserId().equals(currentUserId)) {
+            throw new RuntimeException("Bu xabar sizga tegishli emas! Faqat o'zingiz yozgan xabarni o'chira olasiz.");
+        }
 
         messageRepository.delete(message);
 

@@ -1,0 +1,1 @@
+ALTER TABLE messages ADD user_id BIGINT REFERENCES users(id) ON DELETE CASCADE

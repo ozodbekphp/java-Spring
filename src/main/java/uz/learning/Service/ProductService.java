@@ -12,22 +12,29 @@ import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import uz.learning.Entity.Product;
 import uz.learning.Repository.ProductRepository;
+import uz.learning.Repository.UserRepository;
 import uz.learning.dto.request.ProductRequest;
 import uz.learning.dto.response.ProductPaginationResponse;
 import uz.learning.dto.response.ProductResponse;
+import uz.learning.filter.AuthContext;
 
 @Service
 @RequiredArgsConstructor
 public class ProductService implements ProductInterface {
 
     private final ProductRepository productRepository;
+    private final UserRepository userRepository;
 
     @Override
     public ProductResponse store(ProductRequest request) {
+        // Login qilgan userning ID sini olamiz
+        Long currentUserId = AuthContext.getCurrentUserId();
+
         Product product = Product.builder()
                 .name(request.getName())
                 .price(request.getPrice())
                 .count(request.getCount())
+                .userId(currentUserId)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -80,6 +87,12 @@ public class ProductService implements ProductInterface {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Mahsulot topilmadi, id: " + id));
 
+        // Login qilgan user faqat o'ziga tegishli mahsulotni yangilay oladi
+        Long currentUserId = AuthContext.getCurrentUserId();
+        if (product.getUserId() == null || !product.getUserId().equals(currentUserId)) {
+            throw new RuntimeException("Bu mahsulot sizga tegishli emas! Faqat o'zingizga tegishli mahsulotni yangilay olasiz.");
+        }
+
         product.setName(request.getName());
         product.setPrice(request.getPrice());
         product.setCount(request.getCount());
@@ -102,16 +115,22 @@ public class ProductService implements ProductInterface {
         Product product = productRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Mahsulot topilmadi, id: " + id));
 
+        // Login qilgan user faqat o'ziga tegishli mahsulotni o'chira oladi
+        Long currentUserId = AuthContext.getCurrentUserId();
+        if (product.getUserId() == null || !product.getUserId().equals(currentUserId)) {
+            throw new RuntimeException("Bu mahsulot sizga tegishli emas! Faqat o'zingizga tegishli mahsulotni o'chira olasiz.");
+        }
+
         productRepository.delete(product);
 
-            return ProductResponse.builder()
-            .id(product.getId())
-            .name(product.getName())
-            .price(product.getPrice())
-            .count(product.getCount())
-            .createdAt(product.getCreatedAt())
-            .updatedAt(product.getUpdatedAt())
-            .message("Mahsulot muvaffaqiyatli o'chirildi")
-            .build();
+        return ProductResponse.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .price(product.getPrice())
+                .count(product.getCount())
+                .createdAt(product.getCreatedAt())
+                .updatedAt(product.getUpdatedAt())
+                .message("Mahsulot muvaffaqiyatli o'chirildi")
+                .build();
     }
 }
